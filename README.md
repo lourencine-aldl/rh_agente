@@ -2,6 +2,8 @@
 
 Sistema de análise de currículos com inteligência artificial usando Streamlit e LangGraph.
 
+![Sistema](https://github.com/MoisesArruda/rh_agents/blob/main/data/graph.png)
+
 ## 🚀 Funcionalidades
 
 - **Upload de currículos** em PDF e DOCX
