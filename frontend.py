@@ -173,17 +173,20 @@ def display_results(data):
     entrevista = data.get('entrevista', {})
     if entrevista:
         st.subheader("📅 Detalhes da Entrevista", divider='gray')
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if entrevista.get('meeting_time'):
-                st.info(f"**Data/Hora:** {entrevista['meeting_time']}")
-            if entrevista.get('timezone'):
-                st.info(f"**Fuso horário:** {entrevista['timezone']}")
-        
-        with col2:
-            if entrevista.get('meeting_link'):
-                st.info(f"**Link da reunião:** {entrevista['meeting_link']}")
+        if entrevista.get('note') and not entrevista.get('meeting_time'):
+            st.info(entrevista['note'])
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                if entrevista.get('meeting_time'):
+                    st.info(f"**Data/Hora:** {entrevista['meeting_time']}")
+                if entrevista.get('timezone'):
+                    st.info(f"**Fuso horário:** {entrevista['timezone']}")
+            with col2:
+                if entrevista.get('meeting_link'):
+                    st.info(f"**Link da reunião:** {entrevista['meeting_link']}")
+            if entrevista.get('note'):
+                st.caption(entrevista['note'])
     
     # Currículo revisado
     if data.get('curriculo_revisado'):
@@ -221,7 +224,7 @@ def side_navbar():
     st.sidebar.warning("""
     - Certifique-se de que o CV é válido
     - O processamento pode levar alguns minutos
-    - Todos os dados são processados localmente
+    - O texto do currículo é enviado ao modelo (Groq) para análise
     - Formatos suportados: PDF e DOCX
     """)
     

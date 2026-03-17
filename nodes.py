@@ -3,121 +3,131 @@ import json
 from datetime import datetime, timedelta
 import pytz
 from constants import RecruitamentState
-from job_description import requisitos
+from job_description import requisitos as requisitos_predefinidos
 from llm_config import setup_llm
 
 
-def analyze_cv(state: RecruitamentState) -> Dict:
+def _requisitos_para_analise(state: RecruitamentState) -> str:
+    """Prioriza requisitos digitados na app; senão usa mapa de job_description."""
+    texto_ui = (state.get("requisitos_vaga") or "").strip()
+    if texto_ui:
+        return texto_ui
+    cargo = state.get("cargo", "")
+    return requisitos_predefinidos.get(cargo, "Requisitos não especificados. Preencha o campo na aplicação.")
+
+
+def analyze_cv(state: RecruitamentState) -> Dict[str, Any]:
     """
-    Node que analisa o currículo do candidato em relação aos requisitos da vaga.
-    
-    Args:
-        state: Estado atual do workflow contendo informações do candidato
-        
-    Returns:
-        Dict com o resultado da análise incluindo score, feedback e habilidades
+    Analisa o currículo face aos requisitos da vaga (texto da UI ou predefinidos).
     """
     try:
-        job_requirements = requisitos.get(state['cargo'], "Requisitos não encontrados")
-        
-        prompt = f"""Analise este curriculo em relação aos seguintes requisitos: 
+        job_requirements = _requisitos_para_analise(state)
+        prompt = f"""Analise este curriculo em relação aos seguintes requisitos:
         Cargo: {state['cargo']}
-        Requisitos: {job_requirements}
-        Currículo do candidato: {state['curriculo_text']}
-        
+        Requisitos da vaga:
+        {job_requirements}
+
+        Currículo do candidato:
+        {state['curriculo_text']}
+
         Forneça uma análise em formato JSON com:
 
         {{
-            "selected": true/false,
+            "selected": true,
             "feedback": "feedback detalhado sobre o candidato",
             "matching_skills": ["habilidades que correspondem aos requisitos"],
             "missing_skills": ["habilidades que faltam ao candidato"],
             "score": 85
         }}
-        
-        IMPORTANTE: 
+
+        IMPORTANTE:
         - "selected" deve ser true ou false (boolean)
         - "score" deve ser um número inteiro de 0 a 100
         - "matching_skills" e "missing_skills" devem ser arrays de strings
         """
-        
+
         llm = setup_llm()
-        response = llm.invoke(prompt)
-        content = response.content
-        
-        # Extrai JSON da resposta
-        if '```json' in content:
-            json_str = content.split('```json')[1].split('```')[0].strip()
+        content = llm.invoke(prompt).content
+
+        if "```json" in content:
+            json_str = content.split("```json")[1].split("```")[0].strip()
         else:
             json_str = content.strip()
-            
+
         analysis = json.loads(json_str)
-        
-        # Validação e conversão de tipos
-        if 'score' in analysis:
+
+        if "score" in analysis:
             try:
-                analysis['score'] = int(analysis['score'])
+                analysis["score"] = int(analysis["score"])
             except (ValueError, TypeError):
-                analysis['score'] = 0
-        
-        if 'selected' in analysis:
-            if isinstance(analysis['selected'], str):
-                analysis['selected'] = analysis['selected'].lower() in ['true', '1', 'yes', 'sim']
+                analysis["score"] = 0
+
+        if "selected" in analysis:
+            if isinstance(analysis["selected"], str):
+                analysis["selected"] = analysis["selected"].lower() in ["true", "1", "yes", "sim"]
             else:
-                analysis['selected'] = bool(analysis['selected'])
-        
+                analysis["selected"] = bool(analysis["selected"])
+
         return {"analysis_result": analysis}
-        
+
     except Exception as e:
-        return {"error": str(e)}
+        return {
+            "analysis_result": {
+                "selected": False,
+                "feedback": f"Não foi possível concluir a análise automaticamente: {e}",
+                "matching_skills": [],
+                "missing_skills": [],
+                "score": 0,
+            },
+            "error": str(e),
+        }
 
 
-def candidate_email_generator(state: RecruitamentState) -> Dict:
-    """
-    Node que gera email personalizado para o candidato baseado na análise.
-    
-    Args:
-        state: Estado atual do workflow contendo resultado da análise
-        
-    Returns:
-        Dict com o conteúdo do email gerado
-    """
+def candidate_email_generator(state: RecruitamentState) -> Dict[str, Any]:
+    """Gera e-mail de resposta com base na análise."""
     try:
-        analysis = state.get('analysis_result', {})
-        selected = analysis.get('selected', False)
-        feedback = analysis.get('feedback', '')
-        
-        prompt = f"""Escreva um email de {'aprovação' if selected else 'rejeitado'} para o candidato {state['candidate_email']} com feedback específico.
+        analysis = state.get("analysis_result") or {}
+        selected = analysis.get("selected", False)
+        feedback = analysis.get("feedback", "")
+        email_dest = state.get("candidate_email", "candidato")
 
-        Feedback: {feedback}
-        O e-mail deve ser formal e construtivo"""
+        prompt = f"""Escreva um email de {'aprovação' if selected else 'rejeição'} para o candidato ({email_dest}) com feedback específico.
+
+        Feedback da análise: {feedback}
+        O e-mail deve ser formal, em português, e construtivo."""
 
         response = setup_llm().invoke(prompt)
         return {"email_content": response.content}
-        
+
     except Exception as e:
-        return {"error": str(e)}
+        return {"email_content": f"(Erro ao gerar e-mail: {e})", "error": str(e)}
 
 
-def interview_scheduler(state: RecruitamentState) -> Dict:
-    """
-    Node que agenda entrevista para candidatos selecionados.
-    
-    Args:
-        state: Estado atual do workflow
-        
-    Returns:
-        Dict com detalhes da entrevista agendada
-    """
+def interview_scheduler(state: RecruitamentState) -> Dict[str, Any]:
+    """Sugere data/hora e link apenas para candidatos marcados como selecionados."""
     try:
-        # Agenda entrevista para o próximo dia útil às 11h
-        interview_time = (datetime.now(pytz.timezone('America/Sao_Paulo')) + timedelta(days=1)).replace(hour=11, minute=0)
-        
-        return {"interview_details": {
-            "meeting_time": interview_time.strftime('%d/%m/%Y %H:%M'),
+        analysis = state.get("analysis_result") or {}
+        if not analysis.get("selected"):
+            return {
+                "interview_result": {
+                    "meeting_time": "",
+                    "timezone": "",
+                    "meeting_link": "",
+                    "note": "Candidato não selecionado — sem agendamento de entrevista.",
+                }
+            }
+
+        tz = pytz.timezone("America/Sao_Paulo")
+        base = datetime.now(tz) + timedelta(days=1)
+        interview_time = base.replace(hour=11, minute=0, second=0, microsecond=0)
+
+        details = {
+            "meeting_time": interview_time.strftime("%d/%m/%Y %H:%M"),
             "timezone": "BRT",
-            "meeting_link": f"https://meeting.link/{state['thread_id']}"
-        }}
-        
+            "meeting_link": f"https://meet.placeholder/{state['thread_id']}",
+            "note": "Substitua o link por Calendly, Google Meet ou ferramenta real de agendamento.",
+        }
+        return {"interview_result": details}
+
     except Exception as e:
-        return {"error": str(e)}
+        return {"interview_result": {}, "error": str(e)}

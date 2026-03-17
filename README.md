@@ -2,7 +2,7 @@
 
 Sistema de análise de currículos com inteligência artificial usando Streamlit e LangGraph.
 
-![Sistema](https://github.com/MoisesArruda/rh_agents/blob/main/data/graph.png)
+<!-- Imagem opcional: coloque `data/graph.png` no repositório ou atualize o URL -->
 
 ## 🚀 Funcionalidades
 
@@ -24,7 +24,7 @@ Sistema de análise de currículos com inteligência artificial usando Streamlit
 1. Clone o repositório:
 ```bash
 git clone <url-do-repositorio>
-cd RH_agent
+cd rh_agents
 ```
 
 2. Instale as dependências:
@@ -46,7 +46,7 @@ streamlit run frontend.py
 ## 📁 Estrutura do Projeto
 
 ```
-RH_agent/
+rh_agents/
 ├── frontend.py          # Interface principal em Streamlit
 ├── backend.py           # Módulo de processamento
 ├── graph.py             # Workflow LangGraph principal
@@ -75,12 +75,15 @@ RH_agent/
 - **Email personalizado**: Geração automática de resposta ao candidato
 - **Agendamento**: Criação automática de link para entrevista
 
-## 🔒 Segurança
+## 🔒 Privacidade e segurança
 
-- Todos os dados são processados localmente
-- Arquivos temporários são removidos após processamento
-- Validação de formatos e tamanhos de arquivo
-- Limite de 10MB por arquivo
+- O conteúdo do currículo é enviado à API **Groq** para processamento pela IA (não fica só na tua máquina).
+- Arquivos temporários são removidos após o processamento local.
+- Validação de formato (PDF/DOCX) e tamanho máximo de 10MB.
+
+## 📌 Melhorias sugeridas
+
+Ver **[PROPOSTAS.md](PROPOSTAS.md)** (roadmap técnico e de produto).
 
 
 

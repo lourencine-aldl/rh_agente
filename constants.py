@@ -13,11 +13,12 @@ class ReviewResume(BaseModel):
     resume: str = Field(description="Currículo revisado do candidato")
 
 class RecruitamentState(TypedDict):
-    """State for the recruitment process."""
+    """Estado do fluxo de recrutamento (LangGraph)."""
     thread_id: str
     cargo: str
     curriculo_text: str
     candidate_email: str
+    requisitos_vaga: str  # texto livre da vaga (UI); usado na análise
     analysis_result: Dict[str, Any]
     interview_result: Dict[str, Any]
     email_content: str
