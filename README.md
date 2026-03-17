@@ -82,3 +82,4 @@ RH_agent/
 - Validação de formatos e tamanhos de arquivo
 - Limite de 10MB por arquivo
 
+
