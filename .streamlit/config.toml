@@ -1,0 +1,3 @@
+# Tema claro por defeito (app abre sempre em modo light)
+[theme]
+base = "light"

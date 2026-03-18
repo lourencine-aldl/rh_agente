@@ -1,3 +1,5 @@
+import base64
+import os
 import streamlit as st
 import json
 import time
@@ -5,12 +7,15 @@ from streamlit_extras.switch_page_button import switch_page
 import streamlit.components.v1 as components
 from backend import process_cv, validate_file, get_sample_data
 
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+_ALDL_LOGO = os.path.join(_ROOT, "data", "aldl_logo.png")
+
 # --- Configuração da página ---
 st.set_page_config(
-    page_title="AI Agent - Avaliação de Currículos",
-    page_icon="🔗",
+    page_title="ALDL · Avaliação de Currículos",
+    page_icon=_ALDL_LOGO if os.path.isfile(_ALDL_LOGO) else "📋",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
@@ -199,16 +204,39 @@ def side_navbar():
     """
     Configura a barra lateral da aplicação Streamlit.
     """
-    # Adicionar imagem se disponível
-    sidebar_image = "data/ArrudaConsulting.jpeg"
-    try:
-        st.sidebar.image(image=sidebar_image, width=250, use_container_width=False)
-        st.sidebar.markdown("---")
-    except:
-        pass
-    
+    if os.path.isfile(_ALDL_LOGO):
+        with open(_ALDL_LOGO, "rb") as _lf:
+            _logo_b64 = base64.standard_b64encode(_lf.read()).decode("ascii")
+        st.sidebar.markdown(
+            f"""
+            <div style="display:flex;justify-content:center;align-items:center;width:100%;margin:0 0 6px 0;">
+              <img src="data:image/png;base64,{_logo_b64}"
+                   alt="ALDL"
+                   style="max-width:100px;width:auto;height:auto;object-fit:contain;display:block;
+                          border-radius:12px;padding:10px 14px;
+                          background:linear-gradient(165deg,#ffffff 0%,#f1f5f9 100%);
+                          box-shadow:0 1px 10px rgba(15,23,42,0.06);
+                          border:1px solid rgba(148,163,184,0.16);
+                          box-sizing:content-box;"/>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.sidebar.markdown(
+            '<p style="text-align:center;font-weight:800;color:#1e3a5f;font-size:1.5rem;">ALDL</p>',
+            unsafe_allow_html=True,
+        )
+    st.sidebar.markdown(
+        "<div style='height:1px;background:linear-gradient(90deg,transparent,rgba(100,116,139,.35),transparent);"
+        "margin:10px 0 14px 0;'></div>",
+        unsafe_allow_html=True,
+    )
+
     st.sidebar.info(
-        """Olá, seja bem-vindo! \n\nEu sou um Agente especializado em avaliação de currículos desenvolvido pela Arruda Consulting."""
+        """Olá, seja bem-vindo!
+
+Eu sou um Agente especializado em avaliação de currículos, desenvolvido para auxiliar na análise."""
     )
     
     st.sidebar.markdown("### 📋 Como usar:")
@@ -235,7 +263,7 @@ def side_navbar():
         st.rerun()
     
     st.sidebar.markdown("---")
-    st.sidebar.write('Criado por [Arruda Consulting](https://arrudaconsulting.com.br/).')
+    st.sidebar.write("**ALDL** · agente de avaliação de currículos")
 
 # Configurar a barra lateral
 side_navbar()

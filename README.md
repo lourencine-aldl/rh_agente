@@ -17,7 +17,8 @@ Sistema de análise de currículos com inteligência artificial usando Streamlit
 ## 📋 Pré-requisitos
 
 - Python 3.8+
-- Chave API do Groq
+- Chave API do **Groq** (obrigatória)
+- Chave API da **OpenAI** (opcional — usada automaticamente se o Groq falhar)
 
 ## 🛠️ Instalação
 
@@ -35,7 +36,7 @@ pip install -r requirements.txt
 3. Configure as variáveis de ambiente:
 ```bash
 # Crie um arquivo .env na raiz do projeto
-echo "GROQ_API_KEY=sua_chave_api_groq_aqui" > .env
+Copie `.env.example` para `.env` e preencha `GROQ_API_KEY`. Opcional: `OPENAI_API_KEY` para fallback quando o Groq estiver indisponível ou sem quota.
 ```
 
 4. Execute a aplicação:
@@ -55,8 +56,9 @@ rh_agents/
 ├── constants.py         # Modelos Pydantic e tipos
 ├── job_description.py   # Descrições de vagas
 ├── requirements.txt     # Dependências Python
-└── data/               # Arquivos de dados
-    └── ArrudaConsulting.jpeg
+└── data/
+    ├── aldl_logo.png   # Logo ALDL (barra lateral)
+    └── aldl_logo.svg   # versão vetorial opcional
 ```
 
 ## 🔧 Como Usar
